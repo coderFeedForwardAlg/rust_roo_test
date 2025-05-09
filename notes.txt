@@ -1,0 +1,35 @@
+structs 
+postrgres db 
+
+sqlx functions to add returve data 
+* sql strings 
+
+
+
+seperate funcitons that interact with db fron funcitons that return data to user 
+
+
+ai can you ... 
+
+make a pg db to represent farmers and gardeners, a farmer is someone who needs food to feed their lifestock like grass clipings
+and a gardernder is someworn who gardens and has things like grass clipings. 
+garderners
+* type of biomass 
+* location 
+* has_compost 
+* id 
+
+farmerd
+* needs_compost 
+* location 
+* id
+
+
+can you make rust structs from that 
+
+can you make sqlx functions to retruve and add the structs to the db 
+
+can you make axum endpoints for each sqlx function 
+
+auth 
+
