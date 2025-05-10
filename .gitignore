@@ -2,3 +2,7 @@
 
 /chroma
 rust.pdf
+
+*.lock
+
+*/targer

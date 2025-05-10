@@ -7,8 +7,8 @@ use convert_case::{Case, Casing};
 use serde::Deserialize;
 use sqlx::FromRow;
 use std::io::Write;
-pub use schema::{extract_column_info, extract_table_schemas, extract_clean_table_names, Col};
-
+pub use schema::{extract_column_info, extract_table_schemas, extract_table_names, Col};
+use std::process::{Command, Output};
 
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ fn create_type_map() -> HashMap<String, String> {
     insert_multiple(&mut type_map, "i64", &["BIGINT", "BIGSERIAL", "INT8"]);
     insert_multiple(&mut type_map, "f32", &["REAL", "FLOAT4"]);
     insert_multiple(&mut type_map, "f64", &["DOUBLE PRECISION", "FLOAT8"]);
-    insert_multiple(&mut type_map, "&str", &["VARCHAR", "CHAR(N)", "TEXT", "NAME", "CITEXT"]);
+    insert_multiple(&mut type_map, "String", &["VARCHAR", "CHAR(N)", "TEXT", "NAME", "CITEXT"]);
     insert_multiple(&mut type_map, "Vec<u8>", &["BYTEA"]);
     insert_multiple(&mut type_map, "()", &["VOID"]);
     insert_multiple(&mut type_map, "PgInterval", &["INTERVAL"]);
@@ -53,7 +53,7 @@ fn create_type_map() -> HashMap<String, String> {
     insert_multiple(&mut type_map, "PgHstore", &["HSTORE"]);
 
     // Add the new pairs
-    type_map.insert("NUMERIC".to_string(), "bigdecimal::Decimal".to_string());
+    // type_map.insert("NUMERIC".to_string(), "bigdecimal::Decimal".to_string());
     type_map.insert("TIMESTAMPTZ".to_string(), "chrono::DateTime<Utc>".to_string());
     type_map.insert("TIMESTAMP".to_string(), "chrono::NaiveDateTime".to_string());
     type_map.insert("DATE".to_string(), "chrono::NaiveDate".to_string());
@@ -88,7 +88,7 @@ fn generate_struct(row: &Row, file_path: &str) -> Result<(), std::io::Error> {
     let mut struct_string = format!("#[derive(Debug, Deserialize, FromRow)]\nstruct {} {{\n", struct_name);
 
     for col in &row.cols {
-        let field_name = col.name.to_case(Case::Camel); // Convert column name to camelCase
+        let field_name = col.name.clone();
         let rust_type = type_map.get(&col.col_type)
             .map(|s| s.as_str())
             .unwrap_or("String"); // Default to String if type not found
@@ -107,13 +107,13 @@ fn generate_struct(row: &Row, file_path: &str) -> Result<(), std::io::Error> {
         .open(file_path)?; // Open the file, returning a Result.
 
     // Write the data to the file.
-    file.write_all(struct_string.as_bytes())?;
+    file.write_all(struct_string.as_bytes())?; // comment for testing 
     Ok(())
 }
 
 fn create_rows_from_sql(file_path: &str) -> Result<Vec<Row>, io::Error> {
+    let table_names = extract_table_names(file_path)?;
     let schemas = extract_table_schemas(file_path)?;
-    let table_names = extract_clean_table_names(file_path)?;
     let mut rows: Vec<Row> = Vec::new();
 
     if table_names.len() != schemas.len() {
@@ -121,9 +121,15 @@ fn create_rows_from_sql(file_path: &str) -> Result<Vec<Row>, io::Error> {
     }
 
     for (table_name, schema) in table_names.iter().zip(schemas.iter()) {
+        let cleaned_name = table_name
+            .split('.')
+            .last()
+            .unwrap_or(&table_name)
+            .trim_matches('"')
+            .to_string();
         let cols = extract_column_info(schema);
         let row = Row {
-            name: table_name.to_string(), // Convert &String to String
+            name: cleaned_name,
             cols,
         };
         rows.push(row);
@@ -133,15 +139,106 @@ fn create_rows_from_sql(file_path: &str) -> Result<Vec<Row>, io::Error> {
     Ok(rows)
 }
 
+fn add_insert_func(row: &Row, file_path: &str) -> Result<(), io::Error> {
+    let funk_name = "add_stuff";
+    let struct_name = row.name.clone().to_case(Case::Pascal);
+    let table_name = row.name.clone();
+    let cols: String = row.cols.iter().map(|col| format!("{}, ", col.name).to_string()).collect::<String>()
+        .trim_end_matches(", ").to_string();
+    let cols_list = row.cols.iter().map(|col| col.name.clone()).collect::<Vec<_>>();
+    
+    let bind_feilds = cols_list.iter().enumerate().map(|(i, col)| 
+        format!("\t.bind(payload.{})", cols_list[i]))
+        .collect::<Vec<_>>().join("\n");
+    let feilds = cols_list.iter().enumerate().map(|(i, col)| format!("${}, ", i + 1)).collect::<String>()
+        .trim_end_matches(", ").to_string();
+    let funk = format!(r###"
+
+async fn {funk_name}(
+    extract::State(pool): extract::State<PgPool>,
+    Json(payload): Json<{struct_name}>,
+) -> Json<Value> {{
+    let query = "INSERT INTO {table_name} ({cols}) VALUES ({feilds})";
+    sqlx::query(query)
+    {bind_feilds}
+        .execute(&pool)
+        .await;
+        Json(json!({{"res": "sucsess"}}))
+}}
+"###);
+
+
+    let mut file = OpenOptions::new()
+        .write(true) // Enable writing to the file.
+        .append(true) // Set the append mode.  Crucially, this makes it append.
+        .create(true) // Create the file if it doesn't exist.
+        .open(file_path)?; // Open the file, returning a Result.
+
+
+
+    println!("{}", funk);
+    file.write_all(funk.as_bytes())?; // comment for testing 
+
+    Ok(())
+}
+
+
+fn add_get_all_func(row: &Row, file_path: &str) -> Result<(), io::Error> {
+    let row_name = row.name.clone();
+    let struct_name = row.name.clone().to_case(Case::Pascal);
+    let cols: String = row.cols.iter().map(|col| format!("\t\"{}\": elemint.{}, \n", 
+        col.name, col.name)
+        .to_string()).collect::<String>()
+        .trim_end_matches(", ").to_string();
+    
+
+    let funk_str = format!(r###"
+
+async fn get_stuff(
+    extract::State(pool): extract::State<PgPool>,
+) -> Result<Json<Value>, (StatusCode, String)> {{
+    let query = "SELECT * FROM {row_name}";
+    let q = sqlx::query_as::<_, {struct_name}>(query);
+
+    let elemints: Vec<{struct_name}> = q.fetch_all(&pool).await.map_err(|e| {{
+        (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {{}}", e))
+    }})?;
+
+    let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {{
+        json!({{
+    {cols}
+        }})
+    
+    }}).collect();
+
+    Ok(Json(json!({{ "payload": res_json }})))
+}}
+"###);
+
+    let mut file = OpenOptions::new()
+        .write(true) // Enable writing to the file.
+        .append(true) // Set the append mode.  Crucially, this makes it append.
+        .create(true) // Create the file if it doesn't exist.
+        .open(file_path)?; // Open the file, returning a Result.
+
+    file.write_all(funk_str.as_bytes())?; // comment for testing 
+
+    println!("{}", funk_str);
+
+    Ok(())
+}
 
 
 fn main() -> Result<(), io::Error> {
-    let rows = create_rows_from_sql("test.sql")?;
+    let rows = create_rows_from_sql("../testing/migrations/0001_work.sql")?;
     // println!("Table names: {:?}", rows.iter().map(|row| row.name.clone()).collect::<Vec<String>>());
     for row in rows {
         println!("Row: {:?} \n", row);
         generate_struct(&row, "src/generated_struct.rs")?;
+        add_insert_func(&row, "src/generated_struct.rs")?;
+        add_get_all_func(&row, "src/generated_struct.rs")?;
     }
+
     Ok(())
 }
 
@@ -201,3 +298,4 @@ mod tests {
         Ok(())
     }
 }
+

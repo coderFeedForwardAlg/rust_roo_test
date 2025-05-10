@@ -1,0 +1,2 @@
+fn(axum::extract::State<Pool<Postgres>>, axum::Json<User>) -> impl std::future::Future<Output = axum::Json<JsonValue>> {add_stuff}
+fn(axum::extract::State<Pool<Postgres>>, axum::Json<User>) -> impl std::future::Future<Output = axum::Json<JsonValue>> {add_stuff}: Handler<_, _>

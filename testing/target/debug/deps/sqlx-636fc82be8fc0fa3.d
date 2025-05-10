@@ -1,0 +1,12 @@
+/home/mags/Desktop/programing/rust_roo_test/testing/target/debug/deps/libsqlx-636fc82be8fc0fa3.rmeta: /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/mod.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/mod.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/ty_match.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/spec_error.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.md /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/test.md /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/install_drivers_note.md
+
+/home/mags/Desktop/programing/rust_roo_test/testing/target/debug/deps/sqlx-636fc82be8fc0fa3.d: /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/mod.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/mod.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/ty_match.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/spec_error.rs /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.md /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/test.md /home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/install_drivers_note.md
+
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.rs:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/mod.rs:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/mod.rs:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/ty_match.rs:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/spec_error.rs:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/lib.md:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/macros/test.md:
+/home/mags/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlx-0.8.5/src/any/install_drivers_note.md:

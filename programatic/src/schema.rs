@@ -55,7 +55,7 @@ pub fn extract_column_info(schema: &str) -> Vec<Col> {
 }
 
 
-pub fn extract_clean_table_names(file_path: &str) -> Result<Vec<String>, io::Error> {
+pub fn extract_table_names(file_path: &str) -> Result<Vec<String>, io::Error> {
     let contents = fs::read_to_string(file_path)?;
     let mut table_names = Vec::new();
     let lower_contents = contents.to_lowercase();
@@ -74,13 +74,7 @@ pub fn extract_clean_table_names(file_path: &str) -> Result<Vec<String>, io::Err
             table_name.push(c);
         }
 
-        let cleaned_name = table_name
-            .split('.')
-            .last()
-            .unwrap_or(&table_name)
-            .trim_matches('"')
-            .to_string();
-        table_names.push(cleaned_name);
+        table_names.push(table_name);
 
         // Find the end of the current CREATE TABLE statement (look for ");")
         if let Some(end_index) = contents[start..].find(");") {
@@ -92,4 +86,3 @@ pub fn extract_clean_table_names(file_path: &str) -> Result<Vec<String>, io::Err
 
     Ok(table_names)
 }
-

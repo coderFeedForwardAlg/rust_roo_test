@@ -1,0 +1,1 @@
+/home/mags/Desktop/programing/rust_roo_test/testing/target/debug/testing: /home/mags/Desktop/programing/rust_roo_test/testing/migrations/0001_work.sql /home/mags/Desktop/programing/rust_roo_test/testing/src/main.rs
