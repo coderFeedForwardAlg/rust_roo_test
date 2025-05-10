@@ -1,25 +1,20 @@
-
 #[derive(Debug, Deserialize, FromRow)]
-struct User {
-    id: uuid::Uuid,
-    favorite_color: String,
-    height: i32,
-    age: i32,
-    job: String,
+struct Users {
+    user_uuid: uuid::Uuid,
+    name: String,
+    email: String,
 }
 
 
 async fn add_stuff(
     extract::State(pool): extract::State<PgPool>,
-    Json(payload): Json<User>,
+    Json(payload): Json<Users>,
 ) -> Json<Value> {
-    let query = "INSERT INTO user (id, favorite_color, height, age, job) VALUES ($1, $2, $3, $4, $5)";
+    let query = "INSERT INTO users (user_uuid, name, email) VALUES ($1, $2, $3)";
     sqlx::query(query)
-    	.bind(payload.id)
-	.bind(payload.favorite_color)
-	.bind(payload.height)
-	.bind(payload.age)
-	.bind(payload.job)
+    	.bind(payload.user_uuid)
+	.bind(payload.name)
+	.bind(payload.email)
         .execute(&pool)
         .await;
         Json(json!({"res": "sucsess"}))
@@ -29,20 +24,18 @@ async fn add_stuff(
 async fn get_stuff(
     extract::State(pool): extract::State<PgPool>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let query = "SELECT * FROM user";
-    let q = sqlx::query_as::<_, User>(query);
+    let query = "SELECT * FROM users";
+    let q = sqlx::query_as::<_, Users>(query);
 
-    let elemints: Vec<User> = q.fetch_all(&pool).await.map_err(|e| {
+    let elemints: Vec<Users> = q.fetch_all(&pool).await.map_err(|e| {
         (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e))
     })?;
 
     let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {
         json!({
-    	"id": elemint.id, 
-	"favorite_color": elemint.favorite_color, 
-	"height": elemint.height, 
-	"age": elemint.age, 
-	"job": elemint.job, 
+    	"user_uuid": elemint.user_uuid, 
+	"name": elemint.name, 
+	"email": elemint.email, 
 
         })
     
@@ -51,22 +44,28 @@ async fn get_stuff(
     Ok(Json(json!({ "payload": res_json })))
 }
 #[derive(Debug, Deserialize, FromRow)]
-struct ProductDetails {
-    product_id: i32,
-    description: String,
-    price: i32,
+struct Runs {
+    run_uuid: uuid::Uuid,
+    user_uuid: uuid::Uuid,
+    distance: f64,
+    time: PgInterval,
+    start_time: chrono::DateTime<Utc>,
+    FOREIGN: String,
 }
 
 
 async fn add_stuff(
     extract::State(pool): extract::State<PgPool>,
-    Json(payload): Json<ProductDetails>,
+    Json(payload): Json<Runs>,
 ) -> Json<Value> {
-    let query = "INSERT INTO product_details (product_id, description, price) VALUES ($1, $2, $3)";
+    let query = "INSERT INTO runs (run_uuid, user_uuid, distance, time, start_time, FOREIGN) VALUES ($1, $2, $3, $4, $5, $6)";
     sqlx::query(query)
-    	.bind(payload.product_id)
-	.bind(payload.description)
-	.bind(payload.price)
+    	.bind(payload.run_uuid)
+	.bind(payload.user_uuid)
+	.bind(payload.distance)
+	.bind(payload.time)
+	.bind(payload.start_time)
+	.bind(payload.FOREIGN)
         .execute(&pool)
         .await;
         Json(json!({"res": "sucsess"}))
@@ -76,63 +75,21 @@ async fn add_stuff(
 async fn get_stuff(
     extract::State(pool): extract::State<PgPool>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
-    let query = "SELECT * FROM product_details";
-    let q = sqlx::query_as::<_, ProductDetails>(query);
+    let query = "SELECT * FROM runs";
+    let q = sqlx::query_as::<_, Runs>(query);
 
-    let elemints: Vec<ProductDetails> = q.fetch_all(&pool).await.map_err(|e| {
+    let elemints: Vec<Runs> = q.fetch_all(&pool).await.map_err(|e| {
         (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e))
     })?;
 
     let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {
         json!({
-    	"product_id": elemint.product_id, 
-	"description": elemint.description, 
-	"price": elemint.price, 
-
-        })
-    
-    }).collect();
-
-    Ok(Json(json!({ "payload": res_json })))
-}
-#[derive(Debug, Deserialize, FromRow)]
-struct OrderItems {
-    order_id: i32,
-    item_id: i32,
-    quantity: i32,
-}
-
-
-async fn add_stuff(
-    extract::State(pool): extract::State<PgPool>,
-    Json(payload): Json<OrderItems>,
-) -> Json<Value> {
-    let query = "INSERT INTO order_items (order_id, item_id, quantity) VALUES ($1, $2, $3)";
-    sqlx::query(query)
-    	.bind(payload.order_id)
-	.bind(payload.item_id)
-	.bind(payload.quantity)
-        .execute(&pool)
-        .await;
-        Json(json!({"res": "sucsess"}))
-}
-
-
-async fn get_stuff(
-    extract::State(pool): extract::State<PgPool>,
-) -> Result<Json<Value>, (StatusCode, String)> {
-    let query = "SELECT * FROM order_items";
-    let q = sqlx::query_as::<_, OrderItems>(query);
-
-    let elemints: Vec<OrderItems> = q.fetch_all(&pool).await.map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {}", e))
-    })?;
-
-    let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {
-        json!({
-    	"order_id": elemint.order_id, 
-	"item_id": elemint.item_id, 
-	"quantity": elemint.quantity, 
+    	"run_uuid": elemint.run_uuid, 
+	"user_uuid": elemint.user_uuid, 
+	"distance": elemint.distance, 
+	"time": elemint.time, 
+	"start_time": elemint.start_time, 
+	"FOREIGN": elemint.FOREIGN, 
 
         })
     
