@@ -3,6 +3,11 @@
 /chroma
 rust.pdf
 
-*.lock
 
-*/target
+
+Cargo.lock
+target/
+programatic/Cargo.lock
+programatic/target/
+testing/Cargo.lock
+testing/target/
