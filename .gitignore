@@ -5,9 +5,6 @@ rust.pdf
 
 
 
-Cargo.lock
 target/
-programatic/Cargo.lock
 programatic/target/
-testing/Cargo.lock
 testing/target/
