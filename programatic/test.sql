@@ -10,7 +10,7 @@
         CREATE TABLE product_details (
             product_id INTEGER PRIMARY KEY,
             description TEXT,
-            price DECIMAL(10, 2)
+            price INTEGER
         );
 
         -- This is not a CREATE TABLE statement
