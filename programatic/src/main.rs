@@ -1,3 +1,4 @@
+mod schema;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::fs;
@@ -6,12 +7,9 @@ use convert_case::{Case, Casing};
 use serde::Deserialize;
 use sqlx::FromRow;
 use std::io::Write;
+pub use schema::{extract_column_info, extract_table_schemas, extract_clean_table_names, Col};
 
-#[derive(Debug)]
-struct Col {
-    name: String,
-    col_type: String,
-}
+
 
 #[derive(Debug)]
 struct Row {
@@ -83,105 +81,6 @@ fn create_type_map() -> HashMap<String, String> {
     type_map
 }
 
-fn extract_table_schemas(file_path: &str) -> Result<Vec<String>, io::Error> {
-    let contents = fs::read_to_string(file_path)?;
-    let mut schemas = Vec::new();
-    let lower_contents = contents.to_lowercase();
-    let mut start_index = 0;
-
-    while let Some(create_index) = lower_contents[start_index..].find("create table") {
-        let start = start_index + create_index;
-        if let Some(open_paren_index) = contents[start..].find('(') {
-            let schema_start = start + open_paren_index + 1;
-            if let Some(close_paren_index) = contents[schema_start..].find(");") {
-                let schema_end = schema_start + close_paren_index;
-                let schema = contents[schema_start..schema_end].trim().to_string();
-                schemas.push(schema);
-                start_index = schema_end + 2; // Move past ");"
-            } else {
-                break; // Handle potential errors if closing parenthesis isn't found
-            }
-        } else {
-            break; // Handle potential errors if opening parenthesis isn't found
-        }
-        start_index = start + 1;
-    }
-
-    Ok(schemas)
-}
-
-// similar logic to extract_table_schemas, maybe combin funcitons
-fn extract_clean_table_names(file_path: &str) -> Result<Vec<String>, io::Error> {
-    let contents = fs::read_to_string(file_path)?;
-    let mut table_names = Vec::new();
-    let lower_contents = contents.to_lowercase();
-    let mut start_index = 0;
-
-    while let Some(create_index) = lower_contents[start_index..].find("create table") {
-        let start = start_index + create_index + "create table".len();
-        // Find the start of the table name
-        let name_start = contents[start..].trim_start();
-        // Extract the table name
-        let mut table_name = String::new();
-        for c in name_start.chars() {
-            if c == '(' || c == ' ' || c == '\n' || c == '\r' {
-                break;
-            }
-            table_name.push(c);
-        }
-
-        let cleaned_name = table_name
-            .split('.')
-            .last()
-            .unwrap_or(&table_name)
-            .trim_matches('"')
-            .to_string();
-        table_names.push(cleaned_name);
-
-        // Find the end of the current CREATE TABLE statement (look for ");")
-        if let Some(end_index) = contents[start..].find(");") {
-            start_index = start + end_index + 2; // Move past ");"
-        } else {
-            break; // Handle case where ");" is not found (malformed SQL)
-        }
-    }
-
-    Ok(table_names)
-}
-
-fn extract_column_info(schema: &str) -> Vec<Col> {
-    let column_definitions: Vec<&str> = schema.split(',').map(|s| s.trim()).collect();
-    let mut columns_info = Vec::new();
-
-    for definition in column_definitions {
-        let parts: Vec<&str> = definition.split_whitespace().collect();
-        if parts.len() >= 2 {
-            let name = parts[0].to_string();
-            let col_type = parts[1].to_string();
-            columns_info.push(Col { name, col_type });
-        } else if parts.len() == 1 {
-            // Handle cases with only a name (e.g., constraints)
-            let name = parts[0].to_string();
-            columns_info.push(Col { name, col_type: "".to_string() });
-        }
-    }
-
-    columns_info
-}
-
-fn process_sql_file(file_path: &str) -> Result<(), io::Error> {
-    let table_names = extract_clean_table_names(file_path)?;
-    let schemas = extract_table_schemas(file_path)?;
-    let mut rows: Vec<Row> = Vec::new();
-
-    if table_names.len() != schemas.len() {
-        eprintln!("Warning: Number of table names and schemas do not match!");
-    }
-
-    
-
-    Ok(())
-}
 
 fn generate_struct(row: &Row, file_path: &str) -> Result<(), std::io::Error> {
     let type_map = create_type_map();
@@ -213,8 +112,8 @@ fn generate_struct(row: &Row, file_path: &str) -> Result<(), std::io::Error> {
 }
 
 fn create_rows_from_sql(file_path: &str) -> Result<Vec<Row>, io::Error> {
-    let table_names = extract_clean_table_names(file_path)?;
     let schemas = extract_table_schemas(file_path)?;
+    let table_names = extract_clean_table_names(file_path)?;
     let mut rows: Vec<Row> = Vec::new();
 
     if table_names.len() != schemas.len() {
